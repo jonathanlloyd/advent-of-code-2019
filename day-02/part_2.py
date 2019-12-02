@@ -17,7 +17,7 @@ class Computer:
         while True:
             opcode = self.read(self._pc)
             if opcode == 1:
-                self._do_additon()
+                self._do_addition()
             elif opcode == 2:
                 self._do_multiplication()
             elif opcode == 99:
@@ -25,7 +25,7 @@ class Computer:
             else:
                 raise RuntimeError('Bad state')
 
-    def _do_additon(self):
+    def _do_addition(self):
         [_, input_a_addr, input_b_addr, output_addr] = self._memory[self._pc:self._pc+4]
         input_a = self.read(input_a_addr)
         input_b = self.read(input_b_addr)
