@@ -19,43 +19,58 @@ def parse_map(asteriod_map):
     return asteroids
 
 
-def can_see(asteroid_a, asteroid_b, asteroids):
-    def is_between(a, b, c):
-        a_x = a[0]
-        a_y = a[1]
-        b_x = b[0]
-        b_y = b[1]
-        c_x = c[0]
-        c_y = c[1]
+def get_angle(origin, point):
+    point_x = point[0] - origin[0]
+    point_y = -(point[1] - origin[1])
 
-        cross_product = (c_y - a_y) * (b_x - a_x) - (c_x - a_x) * (b_y - a_y)
-        is_colinear = math.isclose(cross_product, 0)
+    if point_x >= 0 and point_y >= 0:
+        if point_y == 0:
+            angle = math.pi * 0.5
+        else:
+            angle = math.atan(point_x / point_y)
+    elif point_x >= 0 and point_y < 0:
+        if point_x == 0:
+            angle = math.pi
+        else:
+            angle = math.atan(-point_y / point_x) + math.pi * 0.5
+    elif point_x < 0 and point_y < 0:
+        angle = math.atan(-point_x / -point_y) + math.pi * 1
+    elif point_x < 0 and point_y >= 0:
+        angle = math.atan(point_y / -point_x) + math.pi * 1.5
 
-        dot_product = (c_x - a_x) * (b_x - a_x) + (c_y - a_y)*(b_y - a_y)
-        length_squared = (b_x - a_x)*(b_x - a_x) + (b_y - a_y)*(b_y - a_y)
-        in_between = dot_product >= 0 and dot_product <= length_squared
+    return (angle / (2 * math.pi)) * 360
 
-        return is_colinear and in_between
 
-    is_blocked = False
+def distance(a, b):
+    a_x = a[0]
+    a_y = a[1]
+    b_x = b[0]
+    b_y = b[1]
+
+    return math.sqrt(math.pow(a_x - b_x, 2) + math.pow(a_y - b_y, 2)) + 1.75
+
+
+def num_visable_asteroids(current_asteroid, asteroids):
+    angle_to_asteroids = {}
     for asteroid in asteroids:
-        if not asteroid == asteroid_a and not asteroid == asteroid_b:
-            if is_between(asteroid_a, asteroid_b, asteroid):
-                is_blocked = True
-                break
+        if asteroid == current_asteroid:
+            continue
+        angle = get_angle(current_asteroid, asteroid)
+        slot = angle_to_asteroids.get(angle, [])
+        slot.append(asteroid)
+        slot.sort(key=lambda a: distance(a, current_asteroid))
+        angle_to_asteroids[angle] = slot
 
-    return not is_blocked
+    return len(angle_to_asteroids)
 
 
 def find_highest_visibility(asteriod_map):
     asteroids = parse_map(asteriod_map)
-    visibility_counts = {}
 
-    for asteroid_a in asteroids:
-        for asteroid_b in asteroids:
-            if not asteroid_a == asteroid_b:
-                if can_see(asteroid_a, asteroid_b, asteroids):
-                    visibility_counts[asteroid_a] = visibility_counts.get(asteroid_a, 0) + 1
+    visibility_counts = {
+        a: num_visable_asteroids(a, asteroids)
+        for a in asteroids
+    }
 
     return max(visibility_counts.items(), key=lambda i: i[1])
 
