@@ -105,12 +105,14 @@ class Computer:
         self.write(output_addr, input_value)
         self._pc += 2
 
-    def _do_output(self, _):
+    def _do_output(self, modecode):
         if not self._output_callback:
             raise IOError('Output port not connected')
 
-        [_, output_addr] = self._memory[self._pc:self._pc+2]
-        output_value = self.read(output_addr)
+        [output_mode] = self._extract_modes(modecode, 1)
+        [_, output_part] = self._memory[self._pc:self._pc+2]
+
+        output_value = self._value_by_mode(output_part, output_mode)
         self._output_callback(output_value)
 
         self._pc += 2
@@ -174,13 +176,16 @@ class Computer:
 
 
 def run_with_settings(programme, phase_settings):
+    read_counts = {}
     def get_input():
-        nonlocal read_count
+        nonlocal i
+        nonlocal read_counts
+        read_count = read_counts.get(i, 0)
+        read_counts[i] = read_count + 1
         if read_count == 0:
             result = setting
         else:
             result = prev_output
-        read_count += 1
         return result
 
     def do_output(value):
@@ -197,9 +202,7 @@ def run_with_settings(programme, phase_settings):
         for _ in range(0, len(phase_settings))
     ]
     while True:
-
         for i, computer in enumerate(computers):
-            read_count = 0
             setting = phase_settings[i]
             computer.run()
 
@@ -224,13 +227,6 @@ def brute_force_phase_setting(programme, setting_values):
 
 
 if __name__ == '__main__':
-    phase_settings = [9,8,7,6,5]
-    programme = [3,26,1001,26,-4,26,3,27,1002,27,2,27,1,27,26,27,4,27,1001,28,-1,28,1005,28,6,99,0,0,5]
-    import pdb; pdb.set_trace() 
-    result = run_with_settings(programme, phase_settings)
-    print(result)
-    exit(0)
-
     with open('./input', 'r') as f:
         raw = f.read()
     programme = [int(code) for code in raw.split(',')]
